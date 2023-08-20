@@ -21,7 +21,7 @@ df_fatos = pd.merge(df_avaliacoes,df_fatos, left_on='keyAvaliacao', right_on='ke
 df_fatos = pd.merge(df_usuarios,df_fatos, left_on='keyUsuario', right_on='key_usuario')
 df_fatos = pd.merge(df_datas, df_fatos, left_on='keyData', right_on='key_data')
 df_fatos = pd.merge(df_locais,df_fatos, left_on='keyLocal', right_on='key_local',how='left').dropna()
-df_fatos.rename(columns={'Q1':"Segurança", 'Q2':"Infraestrutura", 'Q3':"Limpeza", 'Q4':"Funcionarios", 'Q5':"Localizacao", 'Q6':"Recursos",'Q7':"Atendimento", 'Q8':"Serviços", 'Q9':"Interatividade", 'Q10':"Precos"}, inplace=True)
+df_fatos.rename(columns={'Q1':"Segurança", 'Q2':"Infraestrutura", 'Q3':"Limpeza", 'Q4':"Funcionarios", 'Q5':"Localizacao", 'Q6':"Recursos",'Q7':"Atendimento", 'Q8':"Serviços", 'Q9':"Interatividade", 'Q10':"Preços"}, inplace=True)
 df_fatos['ano_id'] = df_fatos['ano_id'].astype(int)
 
 #Barra lateral
@@ -36,12 +36,12 @@ selected_states = st.sidebar.multiselect('Filtre por Unidade Federativa', state)
 user_types = df_fatos['tipoUsuario'].unique().tolist()
 selected_user_type = st.sidebar.multiselect('Filtre por tipode usuário',user_types)
 #Intervalo em anos
-selected_date_range = st.sidebar.slider('Selecione um intervalo de tempo',1970, 2031, (2000, 2010))
-start_year = selected_date_range[0]
-end_year = selected_date_range[1]
+selected_years = st.sidebar.multiselect('Selecione o período de interesse',[2008,2009,2010])
+
 
 #Main
-st.header('Análises')
+st.header('Grupo 5')
+st.subheader('Análises')
 #Consulta com filtros
 # Apply filters independently
 filtered_df = df_fatos.copy()
@@ -51,10 +51,12 @@ if selected_states:
     filtered_df = filtered_df[filtered_df['estado'].isin(selected_states)]
 if selected_user_type:
     filtered_df = filtered_df[filtered_df['tipoUsuario'].isin(selected_user_type)]
-filtered_df = filtered_df[filtered_df['ano_id'].between(selected_date_range[0], selected_date_range[1])]
+if selected_years:
+    filtered_df = filtered_df[filtered_df['ano_id'].isin(selected_years)]
 
 # Display filtered table
 st.dataframe(filtered_df)
+st.subheader('Pergunta 1')
 st.text('Existe uma variação na média das notas e da quantidade de avaliações de acordo com o mês do ano?')
 filtered_df['mes_numeronoano'] = filtered_df['mes_numeronoano'].astype(int)
 select_fato = filtered_df[['mes_numeronoano','nota','mes_texto']].sort_values('mes_numeronoano')
@@ -94,15 +96,27 @@ fig.update_layout(
 )
 st.plotly_chart(fig)
 
-st.text('Existe uma variação nas notas de segurança, preço e atendimento d')
-
-select_fato2 = filtered_df[['Segurança','Atendimento','Precos','data_id','dia_ehdiautil']].sort_values('data_id')
-select_fato2 = select_fato2.groupby('data_id').agg({'data_id':'first','Segurança':'mean' ,'Atendimento':'mean', 'Precos':'mean', 'dia_ehdiautil':'first'})
-st.dataframe(select_fato2 )
-fig = px.line(select_fato2, x="data_id", y='Segurança', color='dia_ehdiautil' ,  
-              hover_data={"data_id": "|%Y %m, %d hh:mm:ss"},
-              title='custom tick labels')
+st.subheader('Pergunta 2')
+st.text('Existe uma variação nas notas dadas pelos usuários de cadeiras derodas nas categorias de segurança, preço e atendimento, em função do decorrer do tempo e da condição do dia ser útil?')
+nota_categoria = st.radio('Selecione a nota por categoria:', ('Segurança','Preços','Atendimento'))
+select_fato2 = filtered_df[['Segurança','Atendimento','Preços','data_id','dia_ehdiautil','DAM']].sort_values('data_id')
+select_fato2 = select_fato2[select_fato2['DAM'].str.contains('cadeira')]
+select_fato2 = select_fato2.groupby('data_id').agg({'data_id':'first','Segurança':'mean' ,'Atendimento':'mean', 'Preços':'mean', 'dia_ehdiautil':'first'})
+select_fato2['dia_ehdiautil'] = select_fato2['dia_ehdiautil'].astype(int)
+select_fato2['dia_ehdiautil'].replace(0 , 'Não', inplace=True)
+select_fato2['dia_ehdiautil'].replace(1 , 'Sim', inplace=True)
+color_map = {
+    'Sim': 'blue',   
+    'Não': 'yellow'
+}
+fig = px.line(select_fato2, x="data_id", y=nota_categoria, color='dia_ehdiautil',  
+              color_discrete_map=color_map,
+            )
+fig.update_layout(
+    legend_title_text='Dia é útil?',
+)
 fig.update_xaxes(
     dtick="M1",
-    tickformat="%b\n%Y")
+    tickformat="%b\n%Y"
+)
 st.plotly_chart(fig)
