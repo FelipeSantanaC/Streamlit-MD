@@ -120,3 +120,31 @@ fig.update_xaxes(
     tickformat="%b\n%Y"
 )
 st.plotly_chart(fig)
+
+st.subheader('Pergunta 3')
+st.text('Qual a média de notas das avaliações ao longo do ano para os usuários que usam muleta, protese ou bengala?')
+nome_categoria = st.radio('Selecione o tipo de acessório:', ('muleta','protese','bengala'))
+filtered_df['mes_numeronoano'] = filtered_df['mes_numeronoano'].astype(int)
+
+select_fato = filtered_df[['mes_numeronoano','nota','mes_texto', 'DAM']].sort_values('mes_numeronoano')
+select_fato = select_fato[select_fato['DAM'].str.contains(nome_categoria)]
+
+select_fato = select_fato.groupby('mes_numeronoano').agg({'nota':'mean', 'mes_texto':'first'})
+
+
+fig = go.Figure(
+    data=go.Scatter(
+        x=select_fato['mes_texto'],
+        y=select_fato['nota'],
+        name="Média das Avaliações",
+        
+        line=dict(color="red"),
+    )
+)
+
+fig.update_layout(
+    yaxis_title="Média das Avaliações") 
+
+st.plotly_chart(fig)
+
+
