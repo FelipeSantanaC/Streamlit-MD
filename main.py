@@ -118,26 +118,75 @@ st.plotly_chart(fig)
 
 st.subheader('Pergunta 3')
 st.text(' Qual a média de notas das avaliações ao longo do ano para os usuários que usam \n muleta, protese ou bengala?')
-nome_categoria = st.radio('Selecione o tipo de acessório:', ('muleta','protese','bengala'))
+
 filtered_df['mes_numeronoano'] = filtered_df['mes_numeronoano'].astype(int)
 
 select_fato = filtered_df[['mes_numeronoano','nota','mes_texto', 'DAM']].sort_values('mes_numeronoano')
-select_fato = select_fato[select_fato['DAM'].str.contains(nome_categoria)]
-
-select_fato = select_fato.groupby('mes_numeronoano').agg({'nota':'mean', 'mes_texto':'first'})
 
 
-fig = go.Figure(
-    data=go.Scatter(
-        x=select_fato['mes_texto'],
-        y=select_fato['nota'],
-        name="Média das Avaliações",
-        
-        line=dict(color="red"),
-    )
+select_fato1 = select_fato[select_fato['DAM'].str.contains('muleta')]
+select_fato2 = select_fato[select_fato['DAM'].str.contains('protese')]
+select_fato3 = select_fato[select_fato['DAM'].str.contains('bengala')]
+
+
+select_fato1 = select_fato1.groupby('mes_numeronoano').agg({'nota':'mean', 'mes_texto':'first'})
+select_fato2 = select_fato2.groupby('mes_numeronoano').agg({'nota':'mean', 'mes_texto':'first'})
+select_fato3 = select_fato3.groupby('mes_numeronoano').agg({'nota':'mean', 'mes_texto':'first'})
+
+
+trace1 = go.Scatter(
+    x=select_fato1['mes_texto'],
+    y=select_fato1['nota'],
+    name="muleta",
+    line=dict(color="red"),
 )
 
-fig.update_layout(
-    yaxis_title="Média das Avaliações") 
+trace2 = go.Scatter(
+    x=select_fato2['mes_texto'],
+    y=select_fato2['nota'],
+    name="protese",
+    line=dict(color="blue"),
+)
 
+trace3 = go.Scatter(
+    x=select_fato3['mes_texto'],
+    y=select_fato3['nota'],
+    name="bengala",
+    line=dict(color="green"),
+)
+
+# Create a layout for the figure
+
+
+# Create the figure with the traces and layout
+figg = go.Figure(data=[trace1, trace2, trace3])
+figg.update_layout(
+    yaxis_title="Média das Avaliações",
+    xaxis_title="Meses",
+    title="Média de Avaliações por tipo de DAM") 
+
+st.plotly_chart(figg)
+
+
+data = {
+    'keyUsuario': [1, 2, 3, 4],
+    'condicao': ['progressiva/degenerativa', 'temporária', 'estavel ou permanente']
+}
+
+dimusuario_df = filtered_df[['mes_numeronoano','condicao', 'keyUsuario']].sort_values('mes_numeronoano')
+
+condition_colors = {
+    'progressiva/degenerativa': '#1f77b4',   # Blue
+    'temporária': '#ff7f0e',    # Orange
+    'estavel ou permanente': '#2ca02c',    # Green
+}
+
+# Count the occurrences of each mobility condition
+condition_counts = dimusuario_df['condicao'].value_counts().reset_index()
+condition_counts.columns = ['Condição de Mobilidade', 'Número de Usuarios']
+
+# Create a bar chart using Plotly Express
+fig = px.bar(condition_counts, x='Condição de Mobilidade', y='Número de Usuarios',
+             title='Distribuição das Condições de Mobilidade dos Usuários',
+             color="Condição de Mobilidade", color_discrete_map=condition_colors)
 st.plotly_chart(fig)
