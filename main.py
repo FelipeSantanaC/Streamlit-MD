@@ -41,7 +41,7 @@ selected_years = st.sidebar.multiselect('Selecione o período de interesse',[200
 
 #Main
 st.header('Grupo 5')
-st.subheader('Análises')
+
 #Consulta com filtros
 # Apply filters independently
 filtered_df = df_fatos.copy()
@@ -54,7 +54,27 @@ if selected_user_type:
 if selected_years:
     filtered_df = filtered_df[filtered_df['ano_id'].isin(selected_years)]
 
+st.subheader('Informação sobre os usuários')
+dimusuario_df = filtered_df[['mes_numeronoano','condicao', 'keyUsuario']].sort_values('mes_numeronoano')
+
+condition_colors = {
+    'progressiva/degenerativa': '#1f77b4',   # Blue
+    'temporária': '#ff7f0e',    # Orange
+    'estavel ou permanente': '#2ca02c',    # Green
+}
+
+# Count the occurrences of each mobility condition
+condition_counts = dimusuario_df['condicao'].value_counts().reset_index()
+condition_counts.columns = ['Condição de Mobilidade', 'Número de Usuarios']
+
+# Create a bar chart using Plotly Express
+fig = px.bar(condition_counts, x='Condição de Mobilidade', y='Número de Usuarios',
+             title='Distribuição das Condições de Mobilidade dos Usuários',
+             color="Condição de Mobilidade", color_discrete_map=condition_colors)
+st.plotly_chart(fig)
+
 # Display filtered table
+st.subheader('Análises')
 st.subheader('Pergunta 1')
 st.text(' Existe uma variação na média das notas e da quantidade de avaliações de acordo \n com o mês do ano?')
 filtered_df['mes_numeronoano'] = filtered_df['mes_numeronoano'].astype(int)
@@ -168,25 +188,3 @@ figg.update_layout(
 st.plotly_chart(figg)
 
 
-data = {
-    'keyUsuario': [1, 2, 3, 4],
-    'condicao': ['progressiva/degenerativa', 'temporária', 'estavel ou permanente']
-}
-
-dimusuario_df = filtered_df[['mes_numeronoano','condicao', 'keyUsuario']].sort_values('mes_numeronoano')
-
-condition_colors = {
-    'progressiva/degenerativa': '#1f77b4',   # Blue
-    'temporária': '#ff7f0e',    # Orange
-    'estavel ou permanente': '#2ca02c',    # Green
-}
-
-# Count the occurrences of each mobility condition
-condition_counts = dimusuario_df['condicao'].value_counts().reset_index()
-condition_counts.columns = ['Condição de Mobilidade', 'Número de Usuarios']
-
-# Create a bar chart using Plotly Express
-fig = px.bar(condition_counts, x='Condição de Mobilidade', y='Número de Usuarios',
-             title='Distribuição das Condições de Mobilidade dos Usuários',
-             color="Condição de Mobilidade", color_discrete_map=condition_colors)
-st.plotly_chart(fig)
