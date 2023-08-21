@@ -55,56 +55,51 @@ if selected_years:
     filtered_df = filtered_df[filtered_df['ano_id'].isin(selected_years)]
 
 # Display filtered table
-st.dataframe(filtered_df)
 st.subheader('Pergunta 1')
-st.text('Existe uma variação na média das notas e da quantidade de avaliações de acordo com o mês do ano?')
+st.text(' Existe uma variação na média das notas e da quantidade de avaliações de acordo \n com o mês do ano?')
 filtered_df['mes_numeronoano'] = filtered_df['mes_numeronoano'].astype(int)
 select_fato = filtered_df[['mes_numeronoano','nota','mes_texto']].sort_values('mes_numeronoano')
 select_fato = select_fato.groupby('mes_numeronoano').agg({'nota':'mean' ,'mes_numeronoano':'count', 'mes_texto':'first'})
+select_fato['std'] = select_fato['nota'].std()
 
-fig = go.Figure(
-    data=go.Bar(
+bar_chart = go.Figure(
+    go.Bar(
         x=select_fato['mes_texto'],
         y=select_fato['mes_numeronoano'],
         name="Total de avaliações",
-        marker=dict(color="paleturquoise"),
     )
 )
-fig.add_trace(
-    go.Scatter(
-        x=select_fato['mes_texto'],
-        y=select_fato['nota'],
-        yaxis="y2",
-        name="Nota",
-        marker=dict(color="crimson"),
-    )
-)
-fig.update_layout(
-    legend=dict(orientation="h"),
+bar_chart.update_layout(
     yaxis=dict(
         title=dict(text="Total de avaliações por mês"),
         side="left",
         range=[0, select_fato['mes_numeronoano'].max()],
     ),
-    yaxis2=dict(
-        title=dict(text="Média das notas"),
-        side="right",
-        range=[0, 5],
-        overlaying="y",
-        tickmode="sync",
-    ),
+    legend=dict(orientation="h"),
 )
-st.plotly_chart(fig)
+st.plotly_chart(bar_chart)
+
+scatter_chart = go.Figure(data=go.Scatter(
+        x=select_fato['mes_texto'],
+        y=select_fato['nota'],
+        error_y=dict(
+            type='data', # value of error bar given in data coordinates
+            array=select_fato['std'],
+            visible=True)
+    ))
+
+st.plotly_chart(scatter_chart)
 
 st.subheader('Pergunta 2')
-st.text('Existe uma variação nas notas dadas pelos usuários de cadeiras derodas nas categorias de segurança, preço e atendimento, em função do decorrer do tempo e da condição do dia ser útil?')
+st.text(' Existe uma variação nas notas dadas pelos usuários de cadeiras derodas nas \n categorias de segurança, preço e atendimento, em função do decorrer do tempo \n e da condição do dia ser útil?')
 nota_categoria = st.radio('Selecione a nota por categoria:', ('Segurança','Preços','Atendimento'))
-select_fato2 = filtered_df[['Segurança','Atendimento','Preços','data_id','dia_ehdiautil','DAM']].sort_values('data_id')
+select_fato2 = filtered_df[['Segurança','Atendimento','Preços','data_id','dia_ehdiautil','DAM','mes_numeronoano']].sort_values('data_id')
 select_fato2 = select_fato2[select_fato2['DAM'].str.contains('cadeira')]
-select_fato2 = select_fato2.groupby('data_id').agg({'data_id':'first','Segurança':'mean' ,'Atendimento':'mean', 'Preços':'mean', 'dia_ehdiautil':'first'})
+select_fato2 = select_fato2.groupby('data_id').agg({'data_id':'first','Segurança':'mean' ,'Atendimento':'mean', 'Preços':'mean', 'dia_ehdiautil':'first', 'mes_numeronoano':'first'})
 select_fato2['dia_ehdiautil'] = select_fato2['dia_ehdiautil'].astype(int)
 select_fato2['dia_ehdiautil'].replace(0 , 'Não', inplace=True)
 select_fato2['dia_ehdiautil'].replace(1 , 'Sim', inplace=True)
+st.dataframe(select_fato2)
 color_map = {
     'Sim': 'blue',   
     'Não': 'yellow'
@@ -122,7 +117,7 @@ fig.update_xaxes(
 st.plotly_chart(fig)
 
 st.subheader('Pergunta 3')
-st.text('Qual a média de notas das avaliações ao longo do ano para os usuários que usam muleta, protese ou bengala?')
+st.text(' Qual a média de notas das avaliações ao longo do ano para os usuários que usam \n muleta, protese ou bengala?')
 nome_categoria = st.radio('Selecione o tipo de acessório:', ('muleta','protese','bengala'))
 filtered_df['mes_numeronoano'] = filtered_df['mes_numeronoano'].astype(int)
 
@@ -146,5 +141,3 @@ fig.update_layout(
     yaxis_title="Média das Avaliações") 
 
 st.plotly_chart(fig)
-
-
